@@ -10,21 +10,36 @@ The repository intentionally ships **no architecture-specific code**.
 - LLVM development headers and libraries (`llvm-config` must be in `PATH`)
 - A recent GCC/Clang toolchain and GNU binutils
 
+## Source Layout
+
+```
+.
+├── data/arch_catalog.json     # Placeholder map of architectures (fill this in)
+├── elf_creator.c              # Thin CLI front-end
+├── src/
+│   ├── arch_support.c         # Resolves ArchConfig entries
+│   ├── elf_creator.h          # Shared types/constants
+│   ├── elf_writer.c           # Emits the ELF headers + payload
+│   ├── llvm_emit.c            # Builds IR and extracts .text bytes
+│   └── llvm_runtime.c         # Initializes LLVM targets
+└── tools/gen_arch_config.py   # Reads data/arch_catalog.json → include/generated_arch_config.h
+```
+
 ## Workflow Overview
 
-1. **Generate the arch config header (placeholder)**
+1. **Generate the arch config header (catalog-driven placeholder)**
    ```
-   python3 tools/gen_arch_config.py
+   python3 tools/gen_arch_config.py --catalog data/arch_catalog.json
    ```
-   After this step `include/generated_arch_config.h` exists but contains no per-arch data. Replace this generator with your own logic when you’re ready to supply real write/exit thunks.
+   The default catalog lists every ELF target recognized by the linker layer but leaves the syscall fields empty. Populate those `asm` / `constraints` strings to make the build meaningful, then re-run the generator to emit fresh entries into `include/generated_arch_config.h`.
 
 2. **Compile `elf_creator`**
    ```
-   clang $(llvm-config --cflags) elf_creator.c -o elf_creator \
+   clang $(llvm-config --cflags) -Iinclude elf_creator.c src/*.c -o elf_creator \
      $(llvm-config --ldflags --libs core target native object --system-libs) \
      -Wl,-rpath,$(llvm-config --libdir)
    ```
-   *(You can swap `clang` for `gcc`; just keep the `llvm-config` fragments.)*
+   *(You can swap `clang` for `gcc`; just keep the `llvm-config` fragments and include every file under `src/`.)*
 
 3. **Emit the ELF payload**
    ```
