@@ -1,15 +1,73 @@
 cmake_minimum_required(VERSION 3.16)
+
+# Prefer Clang if available and no compiler is explicitly set
+if(NOT DEFINED CMAKE_C_COMPILER AND NOT DEFINED ENV{CC})
+    find_program(CLANG_EXE clang)
+    if(CLANG_EXE)
+        set(CMAKE_C_COMPILER ${CLANG_EXE})
+    endif()
+endif()
+
 project(ELF_from_zero C)
 
 # Generate compile_commands.json for editor integration
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ------------------------------------------------------------------------------
-# Compiler Settings (C99 Standard)
+# Compiler Settings (C11 Standard & Security)
 # ------------------------------------------------------------------------------
-set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
+
+# Paranoid Warning Flags (Compatible with Clang and GCC)
+add_compile_options(
+    -Wall
+    -Wextra
+    -Werror
+    -pedantic
+    -Wconversion
+    -Wshadow
+    -Wunused
+    -Wformat=2
+    -Wcast-align
+    -Wmissing-prototypes
+    -Wstrict-prototypes
+    -Wold-style-definition
+    -Wfloat-equal
+    -Wundef
+)
+
+# Handle implicit-fallthrough differences
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+    add_compile_options(-Wimplicit-fallthrough=5)
+else()
+    add_compile_options(-Wimplicit-fallthrough)
+endif()
+
+# Security Hardening Flags
+add_compile_options(
+    -O2
+    -fstack-protector-strong
+    -fPIE
+    -fno-common
+    -fno-strict-aliasing
+)
+
+# Enable compile-time buffer checks (requires -O1 or higher)
+add_compile_definitions(_FORTIFY_SOURCE=2)
+
+# Linker Security Flags
+add_link_options(
+    -pie
+    -Wl,-z,relro
+    -Wl,-z,now
+    -Wl,-z,noexecstack
+)
+
+# Sanitizers (Address, Undefined, Leak)
+add_compile_options(-fsanitize=address,undefined,leak -fno-omit-frame-pointer)
+add_link_options(-fsanitize=address,undefined,leak)
 
 # ------------------------------------------------------------------------------
 # Dependencies
