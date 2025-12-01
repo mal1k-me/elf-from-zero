@@ -26,6 +26,12 @@
  *
  * Holds the necessary parameters to generate valid ELF headers and
  * inline assembly for system calls for a given architecture.
+ *
+ * @note This structure is populated from `data/arch_catalog.json` via the
+ * `tools/gen_arch_config.py` script. This approach acts as a "Micro-Libc",
+ * providing the minimal OS-specific assembly required for a freestanding
+ * binary without linking against a full C library. This allows for lightweight
+ * cross-architecture support without external toolchains.
  */
 typedef struct
 {

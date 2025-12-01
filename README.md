@@ -66,6 +66,16 @@ The build process and runtime flow are designed to be modular and extensible.
 *   It writes the ELF Header, Program Header, and the extracted machine code to a binary file named `elf`.
 *   Finally, it sets the executable permission bits (`0755`).
 
+## Design Decisions
+
+### Why a JSON Catalog for Syscalls?
+
+You might wonder why we manually define assembly strings in `data/arch_catalog.json` instead of using `libc` or asking LLVM to generate them.
+
+1.  **Freestanding Environment**: We are building a binary "from zero," meaning no `libc` is linked. We must provide the raw system call instructions ourselves.
+2.  **Cross-Architecture Support**: A local `libc` only supports the host architecture. To support RISC-V, ARM, and MIPS simultaneously without installing massive cross-compilation toolchains, we define the minimal required assembly (the "Micro-Libc") in a lightweight JSON format.
+3.  **LLVM Limitations**: LLVM is a compiler backend, not an OS interface. It knows how to generate machine code, but it does not inherently know that Linux `write` is syscall `1` on x86_64 or `64` on RISC-V. This OS-specific knowledge must be supplied externally.
+
 ## Prerequisites
 
 To build and run this project, you need the following tools installed on your system:
