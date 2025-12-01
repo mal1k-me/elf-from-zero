@@ -11,10 +11,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict, List, Match, Optional
+from typing import Any, Dict, List
 
 
 DEFAULT_OUTPUT = "include/generated_arch_config.h"
