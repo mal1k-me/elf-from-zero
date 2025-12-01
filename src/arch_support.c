@@ -16,31 +16,27 @@
 #endif
 
 /**
- * @brief Check if a target triple contains a specific keyword (case-insensitive).
+ * @brief Check if a target triple contains a specific keyword
+ * (case-insensitive).
  *
  * @param triple The LLVM target triple string.
  * @param keyword The keyword to search for (e.g., "x86_64").
  * @return true if the keyword is found, false otherwise.
  */
-static bool contains_keyword(const char *triple, const char *keyword)
-{
-    if (!triple || !keyword)
-    {
+static bool contains_keyword(const char* triple, const char* keyword) {
+    if (!triple || !keyword) {
         return false;
     }
 
     size_t keyword_len = strlen(keyword);
-    for (const char *cursor = triple; *cursor; ++cursor)
-    {
+    for (const char* cursor = triple; *cursor; ++cursor) {
         size_t matched = 0;
-        while (matched < keyword_len &&
-               cursor[matched] &&
-               tolower((unsigned char)cursor[matched]) == tolower((unsigned char)keyword[matched]))
-        {
+        while (matched < keyword_len && cursor[matched] &&
+               tolower((unsigned char)cursor[matched]) ==
+                   tolower((unsigned char)keyword[matched])) {
             ++matched;
         }
-        if (matched == keyword_len)
-        {
+        if (matched == keyword_len) {
             return true;
         }
     }
@@ -56,17 +52,13 @@ static bool contains_keyword(const char *triple, const char *keyword)
  * @param triple The LLVM target triple string.
  * @return Pointer to the matching ArchConfig, or NULL if not found.
  */
-const ArchConfig *select_arch_config(const char *triple)
-{
-    if (!triple)
-    {
+const ArchConfig* select_arch_config(const char* triple) {
+    if (!triple) {
         return NULL;
     }
 
-    for (size_t i = 0; i < sizeof(ARCHES) / sizeof(ARCHES[0]); ++i)
-    {
-        if (contains_keyword(triple, ARCHES[i].keyword))
-        {
+    for (size_t i = 0; i < sizeof(ARCHES) / sizeof(ARCHES[0]); ++i) {
+        if (contains_keyword(triple, ARCHES[i].keyword)) {
             return &ARCHES[i];
         }
     }

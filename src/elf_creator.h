@@ -9,14 +9,15 @@
 #ifndef ELF_CREATOR_H
 #define ELF_CREATOR_H
 
+#include <elf.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
-#include <elf.h>
 
 /** @brief Offset of the .text section in the ELF file. */
 #define TEXT_OFFSET 0x78
-/** @brief Default base virtual address if not specified by architecture config. */
+/** @brief Default base virtual address if not specified by architecture config.
+ */
 #define DEFAULT_BASE_VADDR 0x400000
 /** @brief Length of the "Hello!\\n" string. */
 #define HELLO_LEN 7
@@ -33,23 +34,24 @@
  * binary without linking against a full C library. This allows for lightweight
  * cross-architecture support without external toolchains.
  */
-typedef struct
-{
-    const char *keyword;           /**< Substring to match in LLVM target triple (e.g., "x86_64"). */
-    uint16_t e_machine;            /**< ELF machine architecture (e.g., EM_X86_64). */
-    uint64_t base_vaddr;           /**< Base virtual address for the executable. */
-    const char *write_asm;         /**< Inline assembly for the write syscall. */
-    const char *write_constraints; /**< LLVM constraints string for write syscall. */
-    const char *exit_asm;          /**< Inline assembly for the exit syscall. */
-    const char *exit_constraints;  /**< LLVM constraints string for exit syscall. */
+typedef struct {
+    const char* keyword;   /**< Substring to match in LLVM target triple (e.g.,
+                              "x86_64"). */
+    uint16_t e_machine;    /**< ELF machine architecture (e.g., EM_X86_64). */
+    uint64_t base_vaddr;   /**< Base virtual address for the executable. */
+    const char* write_asm; /**< Inline assembly for the write syscall. */
+    const char*
+        write_constraints; /**< LLVM constraints string for write syscall. */
+    const char* exit_asm;  /**< Inline assembly for the exit syscall. */
+    const char*
+        exit_constraints; /**< LLVM constraints string for exit syscall. */
 } ArchConfig;
 
 /**
  * @brief Container for generated machine code.
  */
-typedef struct
-{
-    uint8_t *bytes; /**< Pointer to the buffer containing raw machine code. */
+typedef struct {
+    uint8_t* bytes; /**< Pointer to the buffer containing raw machine code. */
     size_t size;    /**< Size of the machine code buffer in bytes. */
 } MachineCode;
 
@@ -66,7 +68,7 @@ void initialize_llvm_targets(void);
  * @param triple The LLVM target triple string.
  * @return Pointer to the matching ArchConfig, or NULL if not found.
  */
-const ArchConfig *select_arch_config(const char *triple);
+const ArchConfig* select_arch_config(const char* triple);
 
 /**
  * @brief Generate machine code for the "Hello World" program.
@@ -78,7 +80,9 @@ const ArchConfig *select_arch_config(const char *triple);
  * @param out Pointer to a MachineCode structure to populate.
  * @return 0 on success, non-zero on failure.
  */
-int emit_machine_code(const ArchConfig *config, const char *target_triple, MachineCode *out);
+int emit_machine_code(const ArchConfig* config,
+                      const char* target_triple,
+                      MachineCode* out);
 
 /**
  * @brief Write the generated machine code to an ELF executable file.
@@ -89,6 +93,6 @@ int emit_machine_code(const ArchConfig *config, const char *target_triple, Machi
  * @param code The generated machine code to write into the .text section.
  * @return 0 on success, non-zero on failure.
  */
-int write_elf_file(const ArchConfig *config, const MachineCode *code);
+int write_elf_file(const ArchConfig* config, const MachineCode* code);
 
 #endif /* ELF_CREATOR_H */
