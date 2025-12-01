@@ -89,7 +89,9 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 # Project Configuration
 # ------------------------------------------------------------------------------
 
+# Include directories - ensure both source and generated headers are found
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 set(SRC_FILES
     elf_creator.c
@@ -114,6 +116,9 @@ add_custom_command(
     DEPENDS ${GEN_SCRIPT} ${ARCH_CATALOG}
     COMMENT "Generating architecture configuration header..."
 )
+
+# Ensure the generated header directory exists before compilation
+file(MAKE_DIRECTORY ${GEN_HEADER_DIR})
 
 # ------------------------------------------------------------------------------
 # Main Executable

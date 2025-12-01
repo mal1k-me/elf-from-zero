@@ -52,19 +52,17 @@ def entry_has_real_asm(entry: Dict[str, Any]) -> bool:
 
 
 def render_placeholder() -> str:
-    return dedent(
-        """\
-        // Auto-generated placeholder. Populate data/arch_catalog.json to emit real entries.
-        #ifndef ELF_ARCH_CONFIG_DEFINED
-        #define ELF_ARCH_CONFIG_DEFINED 1
+    return """\
+// Auto-generated placeholder. Populate data/arch_catalog.json to emit real entries.
+#ifndef ELF_ARCH_CONFIG_DEFINED
+#define ELF_ARCH_CONFIG_DEFINED 1
 
-        #include <elf.h>
+#include <elf.h>
 
-        static const ArchConfig ARCHES[] = {};
+static const ArchConfig ARCHES[] = {};
 
-        #endif // ELF_ARCH_CONFIG_DEFINED
-        """
-    )
+#endif // ELF_ARCH_CONFIG_DEFINED
+"""
 
 
 def render_entry(entry: Dict[str, Any]) -> str:
@@ -80,20 +78,18 @@ def render_entry(entry: Dict[str, Any]) -> str:
     exit_asm = encode_c_string(exit_block.get("asm", ""))
     exit_constraints = encode_c_string(exit_block.get("constraints", ""))
 
-    return dedent(
-        f"""\
-            {{
-                .keyword = "{keyword}",
-                .e_machine = {e_machine},
-                .base_vaddr = {base_vaddr},
-                .write_asm =
-                    "{write_asm}",
-                .write_constraints = "{write_constraints}",
-                .exit_asm =
-                    "{exit_asm}",
-                .exit_constraints = "{exit_constraints}",
-            }}"""
-    )
+    return f"""\
+    {{
+        .keyword = "{keyword}",
+        .e_machine = {e_machine},
+        .base_vaddr = {base_vaddr},
+        .write_asm =
+            "{write_asm}",
+        .write_constraints = "{write_constraints}",
+        .exit_asm =
+            "{exit_asm}",
+        .exit_constraints = "{exit_constraints}",
+    }}"""
 
 
 def render_header(entries: List[Dict[str, Any]], catalog_path: Path) -> str:
@@ -102,21 +98,19 @@ def render_header(entries: List[Dict[str, Any]], catalog_path: Path) -> str:
 
     body = ",\n".join(render_entry(entry) for entry in entries)
 
-    return dedent(
-        f"""\
-        // Auto-generated from {catalog_path}. Do not edit by hand.
-        #ifndef ELF_ARCH_CONFIG_DEFINED
-        #define ELF_ARCH_CONFIG_DEFINED 1
+    return f"""\
+// Auto-generated from {catalog_path}. Do not edit by hand.
+#ifndef ELF_ARCH_CONFIG_DEFINED
+#define ELF_ARCH_CONFIG_DEFINED 1
 
-        #include <elf.h>
+#include <elf.h>
 
-        static const ArchConfig ARCHES[] = {{
+static const ArchConfig ARCHES[] = {{
 {body}
-        }};
+}};
 
-        #endif // ELF_ARCH_CONFIG_DEFINED
-        """
-    )
+#endif // ELF_ARCH_CONFIG_DEFINED
+"""
 
 
 def main() -> int:
