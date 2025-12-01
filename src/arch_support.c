@@ -1,3 +1,8 @@
+/**
+ * @file arch_support.c
+ * @brief Implementation of architecture selection logic.
+ */
+
 #include "elf_creator.h"
 
 #include <ctype.h>
@@ -10,6 +15,13 @@
 #error "generated_arch_config.h is missing; generate it before building."
 #endif
 
+/**
+ * @brief Check if a target triple contains a specific keyword (case-insensitive).
+ *
+ * @param triple The LLVM target triple string.
+ * @param keyword The keyword to search for (e.g., "x86_64").
+ * @return true if the keyword is found, false otherwise.
+ */
 static bool contains_keyword(const char *triple, const char *keyword)
 {
     if (!triple || !keyword)
@@ -35,6 +47,15 @@ static bool contains_keyword(const char *triple, const char *keyword)
     return false;
 }
 
+/**
+ * @brief Select the architecture configuration based on the target triple.
+ *
+ * Iterates through the generated architecture catalog and returns the first
+ * configuration whose keyword matches the provided target triple.
+ *
+ * @param triple The LLVM target triple string.
+ * @return Pointer to the matching ArchConfig, or NULL if not found.
+ */
 const ArchConfig *select_arch_config(const char *triple)
 {
     if (!triple)

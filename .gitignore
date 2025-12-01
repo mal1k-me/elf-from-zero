@@ -1,3 +1,12 @@
 include/generated_arch_config.h
 elf_creator
 elf
+
+# CMake build directory
+build/
+
+# Doxygen documentation output
+docs/
+
+# Mypy cache
+.mypy_cache/

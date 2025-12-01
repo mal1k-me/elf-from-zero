@@ -1,4 +1,76 @@
 # ELF_from_zero
+
+A minimal ELF binary generator using LLVM, built from scratch for educational purposes.
+
+## Features
+
+- **Multi-Architecture Support**: Generates code for x86, x86_64, RISC-V 64, ARM, AArch64, and MIPS.
+- **LLVM Backend**: Uses LLVM for portable machine code generation.
+- **Educational Codebase**:
+  - C99 standard compliance.
+  - Extensive Doxygen-style comments.
+  - Strict type checking in Python tooling.
+- **Automated Build**: CMake-based build system.
+
+## Prerequisites
+
+- **LLVM**: Development libraries (libllvm).
+- **Clang**: C compiler.
+- **Python 3**: For configuration generation.
+- **CMake**: Version 3.16 or higher.
+- **Mypy**: (Optional) For Python type checking.
+- **Doxygen**: (Optional) For documentation generation.
+
+## Building
+
+1. Create a build directory:
+   ```bash
+   mkdir build && cd build
+   ```
+
+2. Configure with CMake:
+   ```bash
+   cmake ..
+   ```
+
+3. Build the project:
+   ```bash
+   make
+   ```
+
+## Running
+
+To run the creator and execute the generated ELF binary in one go:
+
+```bash
+make run_demo
+```
+
+Or manually:
+
+```bash
+./elf_creator
+./elf
+```
+
+## Documentation
+
+To generate HTML and LaTeX documentation:
+
+```bash
+make docs
+```
+
+To generate a PDF (requires LaTeX):
+
+```bash
+make docs_pdf
+```
+
+## Development
+
+- **Type Checking**: Run `make check_types` to verify Python scripts with `mypy`.
+- **Architecture Config**: Edit `data/arch_catalog.json` to add or modify architectures. The `tools/gen_arch_config.py` script generates the C header.
 Create a minimal ELF executable from scratch while synthesizing machine code on the fly with LLVM so it stays lean across architectures.
 
 ## Current Status

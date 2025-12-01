@@ -1,3 +1,8 @@
+/**
+ * @file llvm_emit.c
+ * @brief Implementation of LLVM IR generation and machine code emission.
+ */
+
 #include "elf_creator.h"
 
 #include <llvm-c/Analysis.h>
@@ -6,17 +11,33 @@
 #include <llvm-c/TargetMachine.h>
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * @brief Context structure holding LLVM objects for code generation.
+ */
 typedef struct
 {
-    LLVMContextRef context;
-    LLVMModuleRef module;
-    LLVMBuilderRef builder;
-    LLVMTargetMachineRef machine;
+    LLVMContextRef context;       /**< Global LLVM context. */
+    LLVMModuleRef module;         /**< LLVM module being built. */
+    LLVMBuilderRef builder;       /**< IR builder. */
+    LLVMTargetMachineRef machine; /**< Target machine for code generation. */
 } LLVMEmitContext;
 
+/**
+ * @brief Helper to build a store instruction for a single byte in an array.
+ *
+ * @param builder The LLVM builder.
+ * @param alloca_inst The alloca instruction for the array.
+ * @param array_type The type of the array.
+ * @param byte_type The type of a byte (i8).
+ * @param value The byte value to store.
+ * @param index The index in the array.
+ * @param context The LLVM context.
+ * @return The store instruction value.
+ */
 static LLVMValueRef build_store(LLVMBuilderRef builder,
                                 LLVMValueRef alloca_inst,
                                 LLVMTypeRef array_type,
@@ -32,6 +53,11 @@ static LLVMValueRef build_store(LLVMBuilderRef builder,
     return LLVMBuildStore(builder, LLVMConstInt(byte_type, value, 0), ptr);
 }
 
+/**
+ * @brief Clean up LLVM resources in the emit context.
+ *
+ * @param ctx Pointer to the context to dispose.
+ */
 static void dispose_emit_context(LLVMEmitContext *ctx)
 {
     if (!ctx)
@@ -56,12 +82,29 @@ static void dispose_emit_context(LLVMEmitContext *ctx)
     }
 }
 
+/**
+ * @brief Generate machine code for the configured architecture.
+ *
+ * This function performs the following steps:
+ * 1. Initializes LLVM context, module, and builder.
+ * 2. Configures the target machine based on the triple.
+ * 3. Generates LLVM IR for a function that writes "Hello!\\n" and exits.
+ * 4. Compiles the IR to an object file in memory.
+ * 5. Extracts the raw machine code from the .text section.
+ *
+ * @param config Architecture configuration.
+ * @param target_triple LLVM target triple.
+ * @param out Output structure for machine code.
+ * @return 0 on success, 1 on failure.
+ */
 int emit_machine_code(const ArchConfig *config, const char *target_triple, MachineCode *out)
 {
     if (!config || !target_triple || !out)
     {
         return 1;
     }
+
+    printf("Generating code for target: %s\n", target_triple);
 
     LLVMEmitContext ctx = {0};
     ctx.context = LLVMContextCreate();
@@ -144,6 +187,14 @@ int emit_machine_code(const ArchConfig *config, const char *target_triple, Machi
         return 1;
     }
 
+    printf("Generated LLVM IR:\n");
+    char *ir_str = LLVMPrintModuleToString(ctx.module);
+    if (ir_str)
+    {
+        printf("%s\n", ir_str);
+        LLVMDisposeMessage(ir_str);
+    }
+
     LLVMMemoryBufferRef object_buffer = NULL;
     if (LLVMTargetMachineEmitToMemoryBuffer(ctx.machine, ctx.module, LLVMObjectFile, &error, &object_buffer))
     {
@@ -189,6 +240,16 @@ int emit_machine_code(const ArchConfig *config, const char *target_triple, Machi
             memcpy(out->bytes, contents, section_size);
             out->size = section_size;
             found_text = true;
+
+            printf("Extracted .text section (%zu bytes):\n", section_size);
+            for (size_t i = 0; i < section_size; ++i)
+            {
+                printf("%02x ", out->bytes[i]);
+                if ((i + 1) % 16 == 0)
+                    printf("\n");
+            }
+            printf("\n");
+
             break;
         }
     }

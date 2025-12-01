@@ -11,8 +11,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from textwrap import dedent
+from typing import Any, Dict, List, Match, Optional
 
 
 DEFAULT_OUTPUT = "include/generated_arch_config.h"
@@ -26,7 +28,7 @@ def encode_c_string(value: str) -> str:
     return value.replace("\\", "\\\\").replace('"', '\\"')
 
 
-def load_catalog(path: Path) -> list[dict]:
+def load_catalog(path: Path) -> List[Dict[str, Any]]:
     if not path.exists():
         return []
     try:
@@ -36,7 +38,7 @@ def load_catalog(path: Path) -> list[dict]:
     arches = data.get("arches")
     if not isinstance(arches, list):
         return []
-    normalized = []
+    normalized: List[Dict[str, Any]] = []
     for entry in arches:
         if not isinstance(entry, dict):
             continue
@@ -44,7 +46,7 @@ def load_catalog(path: Path) -> list[dict]:
     return normalized
 
 
-def entry_has_real_asm(entry: dict) -> bool:
+def entry_has_real_asm(entry: Dict[str, Any]) -> bool:
     write = entry.get("write") or {}
     exit_block = entry.get("exit") or {}
     return bool(write.get("asm")) and bool(exit_block.get("asm"))
@@ -64,7 +66,7 @@ def render_placeholder() -> str:
     )
 
 
-def render_entry(entry: dict) -> str:
+def render_entry(entry: Dict[str, Any]) -> str:
     keyword = encode_c_string(entry.get("keyword", "unknown"))
     e_machine = entry.get("e_machine", "EM_NONE")
     base_vaddr = entry.get("base_vaddr", "0x400000")
@@ -93,7 +95,7 @@ def render_entry(entry: dict) -> str:
     )
 
 
-def render_header(entries: list[dict], catalog_path: Path) -> str:
+def render_header(entries: List[Dict[str, Any]], catalog_path: Path) -> str:
     if not entries:
         return render_placeholder()
 
@@ -118,13 +120,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Emit include/generated_arch_config.h from a JSON catalog.")
     parser.add_argument("--catalog", default=DEFAULT_CATALOG, help="Path to the architecture catalog JSON file.")
     parser.add_argument("--output", default=DEFAULT_OUTPUT, help="Destination header path.")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output.")
     args = parser.parse_args()
 
     catalog_path = Path(args.catalog)
     entries = load_catalog(catalog_path)
     initial_count = len(entries)
     entries = [entry for entry in entries if entry_has_real_asm(entry)]
-    print(f"[gen_arch_config] catalog entries={initial_count}, emitting={len(entries)}")
+
+    if args.verbose:
+        print(f"[gen_arch_config] Loaded {initial_count} entries from {catalog_path}")
+        for entry in entries:
+            print(f"  - Processing arch: {entry.get('keyword', 'unknown')}")
+    else:
+        print(f"[gen_arch_config] catalog entries={initial_count}, emitting={len(entries)}")
 
     header_text = render_header(entries, catalog_path)
 

@@ -1,3 +1,8 @@
+/**
+ * @file elf_creator.c
+ * @brief Main entry point for the ELF creation tool.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,11 +13,22 @@
 
 #include "src/elf_creator.h"
 
+/**
+ * @brief Print usage information to stderr.
+ *
+ * @param prog_name The name of the program (argv[0]).
+ */
 static void print_usage(const char *prog_name)
 {
     fprintf(stderr, "Usage: %s [--target=<llvm-triple>]\n", prog_name ? prog_name : "elf_creator");
 }
 
+/**
+ * @brief Duplicate a string.
+ *
+ * @param input The string to duplicate.
+ * @return A pointer to the new string, or NULL on failure.
+ */
 static char *dup_string(const char *input)
 {
     if (!input)
@@ -31,6 +47,16 @@ static char *dup_string(const char *input)
     return copy;
 }
 
+/**
+ * @brief Main function.
+ *
+ * Parses arguments, initializes LLVM, selects architecture configuration,
+ * generates machine code, and writes the ELF file.
+ *
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return 0 on success, non-zero on failure.
+ */
 int main(int argc, char **argv)
 {
     const char *requested_triple = NULL;
@@ -88,6 +114,9 @@ int main(int argc, char **argv)
         free(triple_copy);
         return 1;
     }
+
+    printf("Detected Architecture: %s\n", config->keyword);
+    printf("Target Triple:         %s\n", triple_copy);
 
     MachineCode machine_code = {0};
     if (emit_machine_code(config, triple_copy, &machine_code) != 0)

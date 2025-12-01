@@ -1,8 +1,25 @@
+/**
+ * @file elf_writer.c
+ * @brief Implementation of ELF file generation.
+ */
+
 #include "elf_creator.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <sys/stat.h>
 
+/**
+ * @brief Write the generated machine code to an ELF executable file.
+ *
+ * Constructs the ELF header and program header based on the architecture
+ * configuration and writes them along with the machine code to a file named "elf".
+ * Sets the output file permissions to 0755 (rwxr-xr-x).
+ *
+ * @param config The architecture configuration.
+ * @param code The machine code to write.
+ * @return 0 on success, 1 on failure.
+ */
 int write_elf_file(const ArchConfig *config, const MachineCode *code)
 {
     if (!config || !code || !code->bytes || code->size == 0)
@@ -10,8 +27,13 @@ int write_elf_file(const ArchConfig *config, const MachineCode *code)
         return 1;
     }
 
+    printf("Writing ELF file...\n");
+
     const uint64_t base = config->base_vaddr ? config->base_vaddr : DEFAULT_BASE_VADDR;
     const uint64_t entry = base + TEXT_OFFSET;
+
+    printf("  Base Address: 0x%" PRIx64 "\n", base);
+    printf("  Entry Point:  0x%" PRIx64 "\n", entry);
 
     Elf64_Ehdr elf_hdr = {
         .e_ident = {ELFMAG0, ELFMAG1, ELFMAG2, ELFMAG3, ELFCLASS64, ELFDATA2LSB, EV_CURRENT, ELFOSABI_LINUX, 0},
@@ -76,6 +98,8 @@ int write_elf_file(const ArchConfig *config, const MachineCode *code)
         perror("Failed to set executable permissions");
         return 1;
     }
+
+    printf("ELF file written successfully to 'elf'\n");
 
     return 0;
 }
