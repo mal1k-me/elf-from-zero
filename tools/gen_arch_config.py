@@ -12,7 +12,6 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from textwrap import dedent
 from typing import Any, Dict, List
 
 
@@ -78,16 +77,25 @@ def render_entry(entry: Dict[str, Any]) -> str:
     exit_asm = encode_c_string(exit_block.get("asm", ""))
     exit_constraints = encode_c_string(exit_block.get("constraints", ""))
 
+    # Determine if constraints need line wrapping
+    constraints_line = f'    .write_constraints = "{write_constraints}",'
+
+    if len(constraints_line) > 80:
+        write_constraints_formatted = (
+            f'        .write_constraints =\n'
+            f'            "{write_constraints}",'
+        )
+    else:
+        write_constraints_formatted = f'        .write_constraints = "{write_constraints}",'
+
     return f"""\
     {{
         .keyword = "{keyword}",
         .e_machine = {e_machine},
         .base_vaddr = {base_vaddr},
-        .write_asm =
-            "{write_asm}",
-        .write_constraints = "{write_constraints}",
-        .exit_asm =
-            "{exit_asm}",
+        .write_asm = "{write_asm}",
+{write_constraints_formatted}
+        .exit_asm = "{exit_asm}",
         .exit_constraints = "{exit_constraints}",
     }}"""
 
@@ -99,7 +107,7 @@ def render_header(entries: List[Dict[str, Any]], catalog_path: Path) -> str:
     body = ",\n".join(render_entry(entry) for entry in entries)
 
     return f"""\
-// Auto-generated from {catalog_path}. Do not edit by hand.
+// Auto-generated from data/arch_catalog.json. Do not edit by hand.
 #ifndef ELF_ARCH_CONFIG_DEFINED
 #define ELF_ARCH_CONFIG_DEFINED 1
 
