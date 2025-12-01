@@ -2,7 +2,6 @@
 
 A minimal, educational ELF binary generator built from scratch using C11 and LLVM.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Standard](https://img.shields.io/badge/C-11-green.svg)
 ![Build](https://img.shields.io/badge/build-CMake-orange.svg)
 
