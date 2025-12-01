@@ -217,6 +217,9 @@ static int extract_code(LLVMEmitContext* ctx, MachineCode* out) {
         LLVMDisposeMessage(error);
         return 1;
     }
+    if (error) {
+        LLVMDisposeMessage(error);
+    }
 
     (void)printf("Generated LLVM IR:\n");
     char* ir_str = LLVMPrintModuleToString(ctx->module);
