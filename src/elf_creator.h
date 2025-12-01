@@ -9,7 +9,6 @@
 #ifndef ELF_CREATOR_H
 #define ELF_CREATOR_H
 
-#include <elf.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

@@ -58,6 +58,8 @@ def render_placeholder() -> str:
         #ifndef ELF_ARCH_CONFIG_DEFINED
         #define ELF_ARCH_CONFIG_DEFINED 1
 
+        #include <elf.h>
+
         static const ArchConfig ARCHES[] = {};
 
         #endif // ELF_ARCH_CONFIG_DEFINED
@@ -105,6 +107,8 @@ def render_header(entries: List[Dict[str, Any]], catalog_path: Path) -> str:
         // Auto-generated from {catalog_path}. Do not edit by hand.
         #ifndef ELF_ARCH_CONFIG_DEFINED
         #define ELF_ARCH_CONFIG_DEFINED 1
+
+        #include <elf.h>
 
         static const ArchConfig ARCHES[] = {{
 {body}

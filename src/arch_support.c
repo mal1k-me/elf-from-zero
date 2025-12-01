@@ -16,6 +16,39 @@
 #endif
 
 /**
+ * @brief Check if a string starts with a given prefix (case-insensitive).
+ *
+ * @brief Structure to hold a keyword string and its length.
+ */
+typedef struct {
+    const char* text; /**< The keyword text. */
+    size_t len;       /**< The length of the keyword. */
+} KeywordStr;
+
+/**
+ * @brief Check if a string starts with a given prefix (case-insensitive).
+ *
+ * @param str The string to check.
+ * @param prefix The prefix to look for.
+ * @return true if str starts with prefix, false otherwise.
+ */
+static bool starts_with_ignore_case(const char* str, KeywordStr prefix) {
+    for (size_t i = 0; i < prefix.len; ++i) {
+        unsigned char input_char = (unsigned char)str[i];
+        unsigned char prefix_char = (unsigned char)prefix.text[i];
+
+        if (input_char == '\0') {
+            return false;
+        }
+
+        if (tolower(input_char) != tolower(prefix_char)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * @brief Check if a target triple contains a specific keyword
  * (case-insensitive).
  *
@@ -29,14 +62,9 @@ static bool contains_keyword(const char* triple, const char* keyword) {
     }
 
     size_t keyword_len = strlen(keyword);
+    KeywordStr prefix = {keyword, keyword_len};
     for (const char* cursor = triple; *cursor; ++cursor) {
-        size_t matched = 0;
-        while (matched < keyword_len && cursor[matched] &&
-               tolower((unsigned char)cursor[matched]) ==
-                   tolower((unsigned char)keyword[matched])) {
-            ++matched;
-        }
-        if (matched == keyword_len) {
+        if (starts_with_ignore_case(cursor, prefix)) {
             return true;
         }
     }
