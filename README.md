@@ -50,7 +50,6 @@ The repository intentionally ships **no architecture-specific code**.
 
 4. **(Future) Run the produced binary**
    ```
-   chmod +x elf
    ./elf
    ```
    Once you supply actual syscall machine code, the binary should print `hello!`.

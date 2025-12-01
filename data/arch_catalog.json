@@ -5,11 +5,11 @@
       "e_machine": "EM_RISCV",
       "base_vaddr": "0x400000",
       "write": {
-        "asm": "li a0, 1\\n\\tli a2, 7\\n\\tli a7, 64\\n\\tecall\\n\\t",
+        "asm": "li a0, 1; li a2, 7; li a7, 64; ecall",
         "constraints": "{a1},~{a0},~{a2},~{a7},~{memory}"
       },
       "exit": {
-        "asm": "mv a0, zero\\n\\tli a7, 93\\n\\tecall\\n\\t",
+        "asm": "mv a0, zero; li a7, 93; ecall",
         "constraints": "~{a0},~{a7},~{memory}"
       }
     },
@@ -18,11 +18,11 @@
       "e_machine": "EM_X86_64",
       "base_vaddr": "0x400000",
       "write": {
-        "asm": "mov $$1, %edi\\n\\tmov $$7, %edx\\n\\tmov $$1, %eax\\n\\tsyscall\\n\\t",
+        "asm": "mov $$1, %edi; mov $$7, %edx; mov $$1, %eax; syscall",
         "constraints": "{rsi},~{rax},~{rdi},~{rdx},~{rcx},~{r11},~{memory}"
       },
       "exit": {
-        "asm": "xor %edi, %edi\\n\\tmov $$60, %eax\\n\\tsyscall\\n\\t",
+        "asm": "xor %edi, %edi; mov $$60, %eax; syscall",
         "constraints": "~{rax},~{rdi},~{rcx},~{r11},~{memory}"
       }
     },
@@ -31,11 +31,11 @@
       "e_machine": "EM_AARCH64",
       "base_vaddr": "0x400000",
       "write": {
-        "asm": "mov w0, #1\\n\\tmov w2, #7\\n\\tmov w8, #64\\n\\tsvc #0\\n\\t",
+        "asm": "mov w0, #1; mov w2, #7; mov w8, #64; svc #0",
         "constraints": "{x1},~{w0},~{w2},~{w8},~{memory}"
       },
       "exit": {
-        "asm": "mov w0, wzr\\n\\tmov w8, #93\\n\\tsvc #0\\n\\t",
+        "asm": "mov w0, wzr; mov w8, #93; svc #0",
         "constraints": "~{w0},~{w8},~{memory}"
       }
     },
@@ -44,11 +44,11 @@
       "e_machine": "EM_386",
       "base_vaddr": "0x8048000",
       "write": {
-        "asm": "mov $$1, %ebx\\n\\tmov $$7, %edx\\n\\tmov $$4, %eax\\n\\tint $$0x80\\n\\t",
+        "asm": "mov $$1, %ebx; mov $$7, %edx; mov $$4, %eax; int $$0x80",
         "constraints": "{ecx},~{eax},~{ebx},~{edx},~{memory}"
       },
       "exit": {
-        "asm": "xor %ebx, %ebx\\n\\tmov $$1, %eax\\n\\tint $$0x80\\n\\t",
+        "asm": "xor %ebx, %ebx; mov $$1, %eax; int $$0x80",
         "constraints": "~{eax},~{ebx},~{memory}"
       }
     },
@@ -57,25 +57,12 @@
       "e_machine": "EM_ARM",
       "base_vaddr": "0x10000",
       "write": {
-        "asm": "mov r0, #1\\n\\tmov r2, #7\\n\\tmov r7, #4\\n\\tsvc #0\\n\\t",
+        "asm": "mov r0, #1; mov r2, #7; mov r7, #4; svc #0",
         "constraints": "{r1},~{r0},~{r2},~{r7},~{memory}"
       },
       "exit": {
-        "asm": "mov r0, #0\\n\\tmov r7, #1\\n\\tsvc #0\\n\\t",
+        "asm": "mov r0, #0; mov r7, #1; svc #0",
         "constraints": "~{r0},~{r7},~{memory}"
-      }
-    },
-    {
-      "keyword": "loongarch64",
-      "e_machine": "EM_LOONGARCH",
-      "base_vaddr": "0x120000000",
-      "write": {
-        "asm": "li.w $a0, 1\\n\\tli.w $a2, 7\\n\\tli.w $a7, 64\\n\\tsyscall 0\\n\\t",
-        "constraints": "{a1},~{a0},~{a2},~{a7},~{memory}"
-      },
-      "exit": {
-        "asm": "move $a0, $zero\\n\\tli.w $a7, 93\\n\\tsyscall 0\\n\\t",
-        "constraints": "~{a0},~{a7},~{memory}"
       }
     },
     {
@@ -83,77 +70,12 @@
       "e_machine": "EM_MIPS",
       "base_vaddr": "0x400000",
       "write": {
-        "asm": "li $a0, 1\\n\\tli $a2, 7\\n\\tli $v0, 4004\\n\\tsyscall\\n\\t",
+        "asm": "li $$a0, 1; li $$a2, 7; li $$v0, 4004; syscall",
         "constraints": "{a1},~{a0},~{a2},~{v0},~{memory}"
       },
       "exit": {
-        "asm": "li $a0, 0\\n\\tli $v0, 4001\\n\\tsyscall\\n\\t",
+        "asm": "li $$a0, 0; li $$v0, 4001; syscall",
         "constraints": "~{a0},~{v0},~{memory}"
-      }
-    },
-    {
-      "keyword": "ppc64",
-      "e_machine": "EM_PPC64",
-      "base_vaddr": "0x10000000",
-      "write": {
-        "asm": "li 0, 4\\n\\tli 3, 1\\n\\tli 5, 7\\n\\tsc\\n\\t",
-        "constraints": "{r4},~{r0},~{r3},~{r5},~{memory}"
-      },
-      "exit": {
-        "asm": "li 0, 1\\n\\tli 3, 0\\n\\tsc\\n\\t",
-        "constraints": "~{r0},~{r3},~{memory}"
-      }
-    },
-    {
-      "keyword": "ppc",
-      "e_machine": "EM_PPC",
-      "base_vaddr": "0x10000000",
-      "write": {
-        "asm": "li 0, 4\\n\\tli 3, 1\\n\\tli 5, 7\\n\\tsc\\n\\t",
-        "constraints": "{r4},~{r0},~{r3},~{r5},~{memory}"
-      },
-      "exit": {
-        "asm": "li 0, 1\\n\\tli 3, 0\\n\\tsc\\n\\t",
-        "constraints": "~{r0},~{r3},~{memory}"
-      }
-    },
-    {
-      "keyword": "systemz",
-      "e_machine": "EM_S390",
-      "base_vaddr": "0x1000000",
-      "write": {
-        "asm": "lghi %r2, 1\\n\\tlghi %r4, 7\\n\\tlghi %r1, 4\\n\\tsvc 0\\n\\t",
-        "constraints": "{r3},~{r1},~{r2},~{r4},~{memory}"
-      },
-      "exit": {
-        "asm": "lghi %r2, 0\\n\\tlghi %r1, 1\\n\\tsvc 0\\n\\t",
-        "constraints": "~{r1},~{r2},~{memory}"
-      }
-    },
-    {
-      "keyword": "hexagon",
-      "e_machine": "EM_HEXAGON",
-      "base_vaddr": "0x400000",
-      "write": {
-        "asm": "r0 = #1\\n\\tr2 = #7\\n\\tr6 = #64\\n\\ttrap0(#1)\\n\\t",
-        "constraints": "{r1},~{r0},~{r2},~{r6},~{memory}"
-      },
-      "exit": {
-        "asm": "r0 = #0\\n\\tr6 = #93\\n\\ttrap0(#1)\\n\\t",
-        "constraints": "~{r0},~{r6},~{memory}"
-      }
-    },
-    {
-      "keyword": "sparcv9",
-      "e_machine": "EM_SPARCV9",
-      "base_vaddr": "0x100000",
-      "write": {
-        "asm": "mov 1, %o0\\n\\tmov 7, %o2\\n\\tmov 4, %g1\\n\\tta 0x6d\\n\\t",
-        "constraints": "{o1},~{o0},~{o2},~{g1},~{memory}"
-      },
-      "exit": {
-        "asm": "mov 0, %o0\\n\\tmov 1, %g1\\n\\tta 0x6d\\n\\t",
-        "constraints": "~{o0},~{g1},~{memory}"
       }
     }
   ]

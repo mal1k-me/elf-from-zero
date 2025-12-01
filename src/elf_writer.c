@@ -1,6 +1,7 @@
 #include "elf_creator.h"
 
 #include <stdio.h>
+#include <sys/stat.h>
 
 int write_elf_file(const ArchConfig *config, const MachineCode *code)
 {
@@ -69,5 +70,12 @@ int write_elf_file(const ArchConfig *config, const MachineCode *code)
     }
 
     fclose(out);
+
+    if (chmod("elf", 0755) != 0)
+    {
+        perror("Failed to set executable permissions");
+        return 1;
+    }
+
     return 0;
 }
