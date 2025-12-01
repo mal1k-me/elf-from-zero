@@ -78,18 +78,18 @@ To build and run this project, you need the following tools installed on your sy
 We use CMake to manage the build configuration. This project employs "Modern CMake" practices, ensuring out-of-source builds and preventing source tree pollution.
 
 1.  **Create a build directory:**
-    ```bash
+    ```sh
     mkdir build && cd build
     ```
 
 2.  **Configure the project:**
-    ```bash
+    ```sh
     cmake ..
     ```
     *Note: CMake will prefer Clang if available. To force GCC, use `cmake -DCMAKE_C_COMPILER=gcc ..`*
 
 3.  **Compile:**
-    ```bash
+    ```sh
     make
     ```
 
@@ -98,7 +98,7 @@ We use CMake to manage the build configuration. This project employs "Modern CMa
 ### Running the Demo
 To build the tool, generate an ELF binary for your host architecture, and execute it immediately:
 
-```bash
+```sh
 make run_demo
 ```
 
@@ -106,21 +106,21 @@ make run_demo
 You can also run the steps manually:
 
 1.  **Run the creator:**
-    ```bash
+    ```sh
     ./elf_creator
     ```
     *Output:* A file named `elf` in the current directory.
     *Verbose output will show the detected architecture, generated IR, and machine code hex dump.*
 
 2.  **Execute the generated binary:**
-    ```bash
+    ```sh
     ./elf
     ```
     *Output:* `Hello!`
 
 ### Cross-Compilation (Experimental)
 You can attempt to generate code for a different target by passing the LLVM triple:
-```bash
+```sh
 ./elf_creator --target=riscv64-unknown-linux-gnu
 ```
 *Note: You will need a compatible emulator (like QEMU) to run the resulting binary if it doesn't match your host architecture.*
@@ -163,13 +163,13 @@ The source code is extensively documented using Doxygen-style comments.
 To generate the documentation locally:
 
 *   **HTML**:
-    ```bash
+    ```sh
     make docs
     ```
     Open `build/docs/html/index.html` in your browser.
 
 *   **PDF**:
-    ```bash
+    ```sh
     make docs_pdf
     ```
     The PDF will be available at `build/docs/latex/refman.pdf`.
