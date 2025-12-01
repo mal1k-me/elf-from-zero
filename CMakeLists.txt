@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(ELF_from_zero C)
 
+# Generate compile_commands.json for editor integration
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ------------------------------------------------------------------------------
 # Compiler Settings (C99 Standard)
 # ------------------------------------------------------------------------------
