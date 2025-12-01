@@ -76,7 +76,7 @@ To build and run this project, you need the following tools installed on your sy
 
 ## Building the Project
 
-We use CMake to manage the build configuration.
+We use CMake to manage the build configuration. This project employs "Modern CMake" practices, ensuring out-of-source builds and preventing source tree pollution.
 
 1.  **Create a build directory:**
     ```bash
@@ -138,14 +138,14 @@ You might wonder why we manually define assembly strings in `data/arch_catalog.j
 
 ## Project Structure
 
+The project follows a clean separation of concerns. Generated files are kept strictly within the build directory.
+
 ```text
 ELF_from_zero/
 ├── CMakeLists.txt          # Main build configuration
 ├── README.md               # Project documentation
 ├── data/
 │   └── arch_catalog.json   # JSON database of architecture syscalls
-├── include/
-│   └── (generated headers) # Output directory for gen_arch_config.py
 ├── src/
 │   ├── arch_support.c      # Architecture selection logic
 │   ├── elf_creator.h       # Core definitions and API

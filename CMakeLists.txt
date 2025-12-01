@@ -14,14 +14,63 @@ project(ELF_from_zero C)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ------------------------------------------------------------------------------
-# Compiler Settings (C11 Standard & Security)
+# Dependencies
 # ------------------------------------------------------------------------------
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_EXTENSIONS OFF)
 
-# Paranoid Warning Flags (Compatible with Clang and GCC)
-add_compile_options(
+# Find LLVM
+find_package(LLVM REQUIRED CONFIG)
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "LLVM Include Dir: ${LLVM_INCLUDE_DIRS}")
+message(STATUS "LLVM Lib Dir: ${LLVM_LIBRARY_DIRS}")
+
+# Find Python3 (for config generation script)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+# ------------------------------------------------------------------------------
+# Code Generation (Architecture Config)
+# ------------------------------------------------------------------------------
+
+set(GEN_HEADER_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
+set(GEN_HEADER ${GEN_HEADER_DIR}/generated_arch_config.h)
+set(ARCH_CATALOG ${CMAKE_CURRENT_SOURCE_DIR}/data/arch_catalog.json)
+set(GEN_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_arch_config.py)
+
+# Ensure the generated header directory exists before compilation
+file(MAKE_DIRECTORY ${GEN_HEADER_DIR})
+
+add_custom_command(
+    OUTPUT ${GEN_HEADER}
+    COMMAND ${Python3_EXECUTABLE} ${GEN_SCRIPT} --catalog ${ARCH_CATALOG} --output ${GEN_HEADER} --verbose
+    DEPENDS ${GEN_SCRIPT} ${ARCH_CATALOG}
+    COMMENT "Generating architecture configuration header..."
+)
+
+# ------------------------------------------------------------------------------
+# Main Executable Target
+# ------------------------------------------------------------------------------
+
+set(SRC_FILES
+    elf_creator.c
+    src/arch_support.c
+    src/elf_writer.c
+    src/llvm_emit.c
+    src/llvm_runtime.c
+)
+
+add_executable(elf_creator ${SRC_FILES} ${GEN_HEADER})
+
+# ------------------------------------------------------------------------------
+# Compiler Settings (Target-Based)
+# ------------------------------------------------------------------------------
+
+set_target_properties(elf_creator PROPERTIES
+    C_STANDARD 11
+    C_STANDARD_REQUIRED ON
+    C_EXTENSIONS OFF
+)
+
+# Paranoid Warning Flags
+target_compile_options(elf_creator PRIVATE
     -Wall
     -Wextra
     -Werror
@@ -40,13 +89,13 @@ add_compile_options(
 
 # Handle implicit-fallthrough differences
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-    add_compile_options(-Wimplicit-fallthrough=5)
+    target_compile_options(elf_creator PRIVATE -Wimplicit-fallthrough=5)
 else()
-    add_compile_options(-Wimplicit-fallthrough)
+    target_compile_options(elf_creator PRIVATE -Wimplicit-fallthrough)
 endif()
 
-# Security Hardening Flags
-add_compile_options(
+# Security Hardening Flags (Compile)
+target_compile_options(elf_creator PRIVATE
     -O2
     -fstack-protector-strong
     -fPIE
@@ -54,83 +103,42 @@ add_compile_options(
     -fno-strict-aliasing
 )
 
-# Enable compile-time buffer checks (requires -O1 or higher)
-add_compile_definitions(_FORTIFY_SOURCE=2)
+# Enable compile-time buffer checks
+target_compile_definitions(elf_creator PRIVATE _FORTIFY_SOURCE=2)
 
 # Linker Security Flags
-add_link_options(
+target_link_options(elf_creator PRIVATE
     -pie
     -Wl,-z,relro
     -Wl,-z,now
     -Wl,-z,noexecstack
 )
 
-# Sanitizers (Address, Undefined, Leak)
-add_compile_options(-fsanitize=address,undefined,leak -fno-omit-frame-pointer)
-add_link_options(-fsanitize=address,undefined,leak)
+# Sanitizers
+target_compile_options(elf_creator PRIVATE -fsanitize=address,undefined,leak -fno-omit-frame-pointer)
+target_link_options(elf_creator PRIVATE -fsanitize=address,undefined,leak)
 
 # ------------------------------------------------------------------------------
-# Dependencies
+# Include Directories & Definitions
 # ------------------------------------------------------------------------------
 
-# Find LLVM
-find_package(LLVM REQUIRED CONFIG)
-message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-message(STATUS "LLVM Include Dir: ${LLVM_INCLUDE_DIRS}")
-message(STATUS "LLVM Lib Dir: ${LLVM_LIBRARY_DIRS}")
-
-add_definitions(${LLVM_DEFINITIONS})
-include_directories(${LLVM_INCLUDE_DIRS})
-
-# Find Python3 (for config generation script)
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
-
-# ------------------------------------------------------------------------------
-# Project Configuration
-# ------------------------------------------------------------------------------
-
-# Include directories - ensure both source and generated headers are found
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
-
-set(SRC_FILES
-    elf_creator.c
-    src/arch_support.c
-    src/elf_writer.c
-    src/llvm_emit.c
-    src/llvm_runtime.c
+target_include_directories(elf_creator PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_BINARY_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${LLVM_INCLUDE_DIRS}
 )
 
-# ------------------------------------------------------------------------------
-# Code Generation (Architecture Config)
-# ------------------------------------------------------------------------------
-
-set(GEN_HEADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-set(GEN_HEADER ${GEN_HEADER_DIR}/generated_arch_config.h)
-set(ARCH_CATALOG ${CMAKE_CURRENT_SOURCE_DIR}/data/arch_catalog.json)
-set(GEN_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_arch_config.py)
-
-add_custom_command(
-    OUTPUT ${GEN_HEADER}
-    COMMAND ${Python3_EXECUTABLE} ${GEN_SCRIPT} --catalog ${ARCH_CATALOG} --output ${GEN_HEADER} --verbose
-    DEPENDS ${GEN_SCRIPT} ${ARCH_CATALOG}
-    COMMENT "Generating architecture configuration header..."
-)
-
-# Ensure the generated header directory exists before compilation
-file(MAKE_DIRECTORY ${GEN_HEADER_DIR})
+target_compile_definitions(elf_creator PRIVATE ${LLVM_DEFINITIONS})
 
 # ------------------------------------------------------------------------------
-# Main Executable
+# Linking LLVM
 # ------------------------------------------------------------------------------
-
-add_executable(elf_creator ${SRC_FILES} ${GEN_HEADER})
 
 # Map LLVM components to libraries
-# 'native' ensures we link the backend for the host architecture
-# We use llvm-config explicitly to handle monolithic vs split libraries correctly
 find_program(LLVM_CONFIG_EXE NAMES llvm-config HINTS ${LLVM_TOOLS_BINARY_DIR})
 
+# Link directories for LLVM
 link_directories(${LLVM_LIBRARY_DIRS})
 
 if(LLVM_CONFIG_EXE)
@@ -143,7 +151,7 @@ if(LLVM_CONFIG_EXE)
     # Clean up output
     string(REPLACE "\n" " " LLVM_LDFLAGS_LIBS ${LLVM_LDFLAGS_LIBS})
     string(REPLACE " " ";" LLVM_LIBS_LIST ${LLVM_LDFLAGS_LIBS})
-    
+
     target_link_libraries(elf_creator PRIVATE ${LLVM_LIBS_LIST})
 else()
     message(WARNING "llvm-config not found, falling back to llvm_map_components_to_libnames")
@@ -152,8 +160,12 @@ else()
 endif()
 
 # Ensure RPATH is set so the executable can find LLVM shared libs
-set_target_properties(elf_creator PROPERTIES INSTALL_RPATH "${LLVM_LIBRARY_DIRS}")
-set_target_properties(elf_creator PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+set_target_properties(elf_creator PROPERTIES
+    INSTALL_RPATH "${LLVM_LIBRARY_DIRS}"
+    BUILD_WITH_INSTALL_RPATH TRUE
+)
+
+
 
 # ------------------------------------------------------------------------------
 # Custom Targets
@@ -182,29 +194,36 @@ endif()
 # ------------------------------------------------------------------------------
 # Documentation (Doxygen)
 # ------------------------------------------------------------------------------
-# Note: The output directory 'docs' should be added to .gitignore
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
     set(DOXY_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/docs")
-    
-    # Generate a Doxyfile programmatically to avoid needing a separate file in the repo
+
+    # Create a Doxyfile.in content
     set(DOXYFILE_CONTENT "
-        PROJECT_NAME           = \"ELF From Zero\"
-        PROJECT_BRIEF          = \"Educational ELF binary generator using LLVM\"
-        OUTPUT_DIRECTORY       = \"${DOXY_OUTPUT_DIR}\"
-        INPUT                  = \"${CMAKE_CURRENT_SOURCE_DIR}/src\" \"${CMAKE_CURRENT_SOURCE_DIR}/elf_creator.c\" \"${CMAKE_CURRENT_SOURCE_DIR}/include\"
-        RECURSIVE              = YES
-        OPTIMIZE_OUTPUT_FOR_C  = YES
-        GENERATE_LATEX         = YES
-        USE_PDFLATEX           = YES
-        HAVE_DOT               = NO
-        EXTRACT_ALL            = YES
-        EXTRACT_PRIVATE        = YES
-        EXTRACT_STATIC         = YES
-        WARN_IF_UNDOCUMENTED   = NO
-    ")
-    
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile "${DOXYFILE_CONTENT}")
+PROJECT_NAME           = \"ELF From Zero\"
+PROJECT_BRIEF          = \"Educational ELF binary generator using LLVM\"
+OUTPUT_DIRECTORY       = \"@DOXY_OUTPUT_DIR@\"
+INPUT                  = \"@CMAKE_CURRENT_SOURCE_DIR@/src\" \"@CMAKE_CURRENT_SOURCE_DIR@/elf_creator.c\" \"@CMAKE_CURRENT_SOURCE_DIR@/include\"
+RECURSIVE              = YES
+OPTIMIZE_OUTPUT_FOR_C  = YES
+GENERATE_LATEX         = YES
+USE_PDFLATEX           = YES
+HAVE_DOT               = NO
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+WARN_IF_UNDOCUMENTED   = NO
+")
+
+    # Write the template file
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.in "${DOXYFILE_CONTENT}")
+
+    # Use configure_file to generate the actual Doxyfile
+    configure_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.in
+        ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+        @ONLY
+    )
 
     # Target to generate HTML and LaTeX source
     add_custom_target(docs
@@ -212,7 +231,7 @@ if(DOXYGEN_FOUND)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating HTML and LaTeX documentation"
     )
-    
+
     # Target to compile LaTeX to PDF (requires pdflatex and make)
     add_custom_target(docs_pdf
         COMMAND ${CMAKE_MAKE_PROGRAM}
@@ -220,8 +239,9 @@ if(DOXYGEN_FOUND)
         DEPENDS docs
         COMMENT "Building PDF documentation from LaTeX"
     )
-    
+
     message(STATUS "Doxygen targets added: 'docs' (HTML/LaTeX) and 'docs_pdf' (PDF)")
 else()
     message(WARNING "Doxygen not found. Documentation targets will not be available.")
 endif()
+

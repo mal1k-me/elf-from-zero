@@ -26,6 +26,14 @@ typedef struct {
 } KeywordStr;
 
 /**
+ * @brief Wrapper for tolower to reduce cognitive complexity from macro
+ * expansion.
+ */
+static int safe_tolower(int char_code) {
+    return tolower(char_code);
+}
+
+/**
  * @brief Check if a string starts with a given prefix (case-insensitive).
  *
  * @param str The string to check.
@@ -41,7 +49,7 @@ static bool starts_with_ignore_case(const char* str, KeywordStr prefix) {
             return false;
         }
 
-        if (tolower(input_char) != tolower(prefix_char)) {
+        if (safe_tolower(input_char) != safe_tolower(prefix_char)) {
             return false;
         }
     }

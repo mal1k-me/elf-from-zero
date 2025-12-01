@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 
-DEFAULT_OUTPUT = "include/generated_arch_config.h"
+DEFAULT_OUTPUT = "build/include/generated_arch_config.h"
 DEFAULT_CATALOG = "data/arch_catalog.json"
 
 
@@ -56,6 +56,7 @@ def render_placeholder() -> str:
 #ifndef ELF_ARCH_CONFIG_DEFINED
 #define ELF_ARCH_CONFIG_DEFINED 1
 
+#include "elf_creator.h"
 #include <elf.h>
 
 static const ArchConfig ARCHES[] = {};
@@ -111,6 +112,7 @@ def render_header(entries: List[Dict[str, Any]], catalog_path: Path) -> str:
 #ifndef ELF_ARCH_CONFIG_DEFINED
 #define ELF_ARCH_CONFIG_DEFINED 1
 
+#include "elf_creator.h"
 #include <elf.h>
 
 static const ArchConfig ARCHES[] = {{

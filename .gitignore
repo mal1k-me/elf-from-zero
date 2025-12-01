@@ -1,8 +1,5 @@
-include/generated_arch_config.h
-
 # CMake build directory
 build/
 
 # Caches
-.mypy_cache/
 .cache/
