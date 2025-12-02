@@ -35,12 +35,20 @@ set(GEN_HEADER ${GEN_HEADER_DIR}/generated_arch_config.h)
 set(ARCH_CATALOG ${CMAKE_CURRENT_SOURCE_DIR}/data/arch_catalog.json)
 set(GEN_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_arch_config.py)
 
+# Allow user to specify target architecture
+set(TARGET_ARCH "" CACHE STRING "Target architecture to generate (empty for host default)")
+
 # Ensure the generated header directory exists before compilation
 file(MAKE_DIRECTORY ${GEN_HEADER_DIR})
 
+set(GEN_ARGS --catalog ${ARCH_CATALOG} --output ${GEN_HEADER} --verbose)
+if(TARGET_ARCH)
+    list(APPEND GEN_ARGS --arch "${TARGET_ARCH}")
+endif()
+
 add_custom_command(
     OUTPUT ${GEN_HEADER}
-    COMMAND ${Python3_EXECUTABLE} ${GEN_SCRIPT} --catalog ${ARCH_CATALOG} --output ${GEN_HEADER} --verbose
+    COMMAND ${Python3_EXECUTABLE} ${GEN_SCRIPT} ${GEN_ARGS}
     DEPENDS ${GEN_SCRIPT} ${ARCH_CATALOG}
     COMMENT "Generating architecture configuration header..."
 )
@@ -69,54 +77,62 @@ set_target_properties(elf_creator PROPERTIES
     C_EXTENSIONS OFF
 )
 
-# Paranoid Warning Flags
-target_compile_options(elf_creator PRIVATE
-    -Wall
-    -Wextra
-    -Werror
-    -pedantic
-    -Wconversion
-    -Wshadow
-    -Wunused
-    -Wformat=2
-    -Wcast-align
-    -Wmissing-prototypes
-    -Wstrict-prototypes
-    -Wold-style-definition
-    -Wfloat-equal
-    -Wundef
-)
+# Option for paranoid hardening
+option(ENABLE_PARANOID_HARDENING "Enable strict security flags and sanitizers" OFF)
 
-# Handle implicit-fallthrough differences
-if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-    target_compile_options(elf_creator PRIVATE -Wimplicit-fallthrough=5)
+if(ENABLE_PARANOID_HARDENING)
+    # Paranoid Warning Flags
+    target_compile_options(elf_creator PRIVATE
+        -Wall
+        -Wextra
+        -Werror
+        -pedantic
+        -Wconversion
+        -Wshadow
+        -Wunused
+        -Wformat=2
+        -Wcast-align
+        -Wmissing-prototypes
+        -Wstrict-prototypes
+        -Wold-style-definition
+        -Wfloat-equal
+        -Wundef
+    )
+
+    # Handle implicit-fallthrough differences
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+        target_compile_options(elf_creator PRIVATE -Wimplicit-fallthrough=5)
+    else()
+        target_compile_options(elf_creator PRIVATE -Wimplicit-fallthrough)
+    endif()
+
+    # Security Hardening Flags (Compile)
+    target_compile_options(elf_creator PRIVATE
+        -O2
+        -fstack-protector-strong
+        -fPIE
+        -fno-common
+        -fno-strict-aliasing
+    )
+
+    # Enable compile-time buffer checks
+    target_compile_definitions(elf_creator PRIVATE _FORTIFY_SOURCE=2)
+
+    # Linker Security Flags
+    target_link_options(elf_creator PRIVATE
+        -pie
+        -Wl,-z,relro
+        -Wl,-z,now
+        -Wl,-z,noexecstack
+    )
+
+    # Sanitizers
+    target_compile_options(elf_creator PRIVATE -fsanitize=address,undefined,leak -fno-omit-frame-pointer)
+    target_link_options(elf_creator PRIVATE -fsanitize=address,undefined,leak)
 else()
-    target_compile_options(elf_creator PRIVATE -Wimplicit-fallthrough)
+    # Basic warnings for educational build
+    target_compile_options(elf_creator PRIVATE -Wall -Wextra)
 endif()
-
-# Security Hardening Flags (Compile)
-target_compile_options(elf_creator PRIVATE
-    -O2
-    -fstack-protector-strong
-    -fPIE
-    -fno-common
-    -fno-strict-aliasing
-)
-
-# Enable compile-time buffer checks
-target_compile_definitions(elf_creator PRIVATE _FORTIFY_SOURCE=2)
-
-# Linker Security Flags
-target_link_options(elf_creator PRIVATE
-    -pie
-    -Wl,-z,relro
-    -Wl,-z,now
-    -Wl,-z,noexecstack
-)
-
-# Sanitizers
-target_compile_options(elf_creator PRIVATE -fsanitize=address,undefined,leak -fno-omit-frame-pointer)
-target_link_options(elf_creator PRIVATE -fsanitize=address,undefined,leak)
 
 # ------------------------------------------------------------------------------
 # Include Directories & Definitions
@@ -244,4 +260,3 @@ WARN_IF_UNDOCUMENTED   = NO
 else()
     message(WARNING "Doxygen not found. Documentation targets will not be available.")
 endif()
-

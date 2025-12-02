@@ -1,45 +1,6 @@
 {
   "arches": [
     {
-      "keyword": "riscv64",
-      "e_machine": "EM_RISCV",
-      "base_vaddr": "0x400000",
-      "write": {
-        "asm": "li a0, 1; li a2, 7; li a7, 64; ecall",
-        "constraints": "{a1},~{a0},~{a2},~{a7},~{memory}"
-      },
-      "exit": {
-        "asm": "mv a0, zero; li a7, 93; ecall",
-        "constraints": "~{a0},~{a7},~{memory}"
-      }
-    },
-    {
-      "keyword": "x86_64",
-      "e_machine": "EM_X86_64",
-      "base_vaddr": "0x400000",
-      "write": {
-        "asm": "mov $$1, %edi; mov $$7, %edx; mov $$1, %eax; syscall",
-        "constraints": "{rsi},~{rax},~{rdi},~{rdx},~{rcx},~{r11},~{memory}"
-      },
-      "exit": {
-        "asm": "xor %edi, %edi; mov $$60, %eax; syscall",
-        "constraints": "~{rax},~{rdi},~{rcx},~{r11},~{memory}"
-      }
-    },
-    {
-      "keyword": "aarch64",
-      "e_machine": "EM_AARCH64",
-      "base_vaddr": "0x400000",
-      "write": {
-        "asm": "mov w0, #1; mov w2, #7; mov w8, #64; svc #0",
-        "constraints": "{x1},~{w0},~{w2},~{w8},~{memory}"
-      },
-      "exit": {
-        "asm": "mov w0, wzr; mov w8, #93; svc #0",
-        "constraints": "~{w0},~{w8},~{memory}"
-      }
-    },
-    {
       "keyword": "x86",
       "e_machine": "EM_386",
       "base_vaddr": "0x8048000",
@@ -50,6 +11,19 @@
       "exit": {
         "asm": "xor %ebx, %ebx; mov $$1, %eax; int $$0x80",
         "constraints": "~{eax},~{ebx},~{memory}"
+      }
+    },
+    {
+      "keyword": "x86-64",
+      "e_machine": "EM_X86_64",
+      "base_vaddr": "0x400000",
+      "write": {
+        "asm": "mov $$1, %edi; mov $$7, %edx; mov $$1, %eax; syscall",
+        "constraints": "{rsi},~{rax},~{rdi},~{rdx},~{rcx},~{r11},~{memory}"
+      },
+      "exit": {
+        "asm": "xor %edi, %edi; mov $$60, %eax; syscall",
+        "constraints": "~{rax},~{rdi},~{rcx},~{r11},~{memory}"
       }
     },
     {
@@ -66,15 +40,93 @@
       }
     },
     {
+      "keyword": "aarch64",
+      "e_machine": "EM_AARCH64",
+      "base_vaddr": "0x400000",
+      "write": {
+        "asm": "mov w0, #1; mov w2, #7; mov w8, #64; svc #0",
+        "constraints": "{x1},~{w0},~{w2},~{w8},~{memory}"
+      },
+      "exit": {
+        "asm": "mov w0, wzr; mov w8, #93; svc #0",
+        "constraints": "~{w0},~{w8},~{memory}"
+      }
+    },
+    {
+      "keyword": "riscv32",
+      "e_machine": "EM_RISCV",
+      "base_vaddr": "0x10000",
+      "write": {
+        "asm": "li a0, 1; li a2, 7; li a7, 64; ecall",
+        "constraints": "{a1},~{a0},~{a2},~{a7},~{memory}"
+      },
+      "exit": {
+        "asm": "mv a0, zero; li a7, 93; ecall",
+        "constraints": "~{a0},~{a7},~{memory}"
+      }
+    },
+    {
+      "keyword": "riscv64",
+      "e_machine": "EM_RISCV",
+      "base_vaddr": "0x400000",
+      "write": {
+        "asm": "li a0, 1; li a2, 7; li a7, 64; ecall",
+        "constraints": "{a1},~{a0},~{a2},~{a7},~{memory}"
+      },
+      "exit": {
+        "asm": "mv a0, zero; li a7, 93; ecall",
+        "constraints": "~{a0},~{a7},~{memory}"
+      }
+    },
+    {
       "keyword": "mips",
       "e_machine": "EM_MIPS",
       "base_vaddr": "0x400000",
       "write": {
-        "asm": "li $$a0, 1; li $$a2, 7; li $$v0, 4004; syscall",
-        "constraints": "{a1},~{a0},~{a2},~{v0},~{memory}"
+        "asm": "move $$a1, $0; li $$a0, 1; li $$a2, 7; li $$v0, 4004; syscall",
+        "constraints": "r,~{a0},~{a1},~{a2},~{v0},~{memory}"
       },
       "exit": {
         "asm": "li $$a0, 0; li $$v0, 4001; syscall",
+        "constraints": "~{a0},~{v0},~{memory}"
+      }
+    },
+    {
+      "keyword": "mips64",
+      "e_machine": "EM_MIPS",
+      "base_vaddr": "0x400000",
+      "write": {
+        "asm": "move $$a1, $0; li $$a0, 1; li $$a2, 7; li $$v0, 5001; syscall",
+        "constraints": "r,~{a0},~{a1},~{a2},~{v0},~{memory}"
+      },
+      "exit": {
+        "asm": "li $$a0, 0; li $$v0, 5058; syscall",
+        "constraints": "~{a0},~{v0},~{memory}"
+      }
+    },
+    {
+      "keyword": "mipsel",
+      "e_machine": "EM_MIPS",
+      "base_vaddr": "0x400000",
+      "write": {
+        "asm": "move $$a1, $0; li $$a0, 1; li $$a2, 7; li $$v0, 4004; syscall",
+        "constraints": "r,~{a0},~{a1},~{a2},~{v0},~{memory}"
+      },
+      "exit": {
+        "asm": "li $$a0, 0; li $$v0, 4001; syscall",
+        "constraints": "~{a0},~{v0},~{memory}"
+      }
+    },
+    {
+      "keyword": "mips64el",
+      "e_machine": "EM_MIPS",
+      "base_vaddr": "0x400000",
+      "write": {
+        "asm": "move $$a1, $0; li $$a0, 1; li $$a2, 7; li $$v0, 5001; syscall",
+        "constraints": "r,~{a0},~{a1},~{a2},~{v0},~{memory}"
+      },
+      "exit": {
+        "asm": "li $$a0, 0; li $$v0, 5058; syscall",
         "constraints": "~{a0},~{v0},~{memory}"
       }
     }

@@ -36,57 +36,68 @@ The primary goal of this project is to demystify the creation of executable bina
 
 This project adheres to **paranoid** coding standards to serve as a reference for secure C development:
 
-*   **Strict C11 Compliance**: No non-standard extensions.
-*   **Compiler Agnostic**: Supports both **Clang** (preferred) and **GCC**.
-*   **Hardened Build**:
-    *   Full Relocation Read-Only (`RELRO`) and Immediate Binding (`BIND_NOW`).
-    *   Non-executable stack (`NX`).
-    *   Position Independent Executable (`PIE`).
-    *   Stack Canaries (`-fstack-protector-strong`).
-    *   Compile-time buffer checks (`_FORTIFY_SOURCE=2`).
-*   **Runtime Sanitizers**: Built with AddressSanitizer (ASan), UndefinedBehaviorSanitizer (UBSan), and LeakSanitizer (LSan) enabled by default.
-*   **Static Analysis**: Verified with `clang-tidy` using strict configuration (zero warnings).
+- **Strict C11 Compliance**: No non-standard extensions.
+- **Compiler Agnostic**: Supports both **Clang** (preferred) and **GCC**.
+- **Hardened Build** (Optional):
+  - Full Relocation Read-Only (`RELRO`) and Immediate Binding (`BIND_NOW`).
+  - Non-executable stack (`NX`).
+  - Position Independent Executable (`PIE`).
+  - Stack Canaries (`-fstack-protector-strong`).
+  - Compile-time buffer checks (`_FORTIFY_SOURCE=2`).
+- **Runtime Sanitizers**: Can be enabled via CMake options (ASan, UBSan, LSan).
+- **Static Analysis**: Verified with `clang-tidy` using strict configuration (zero warnings).
 
 ## Supported Architectures
 
 The project currently supports code generation for the following architectures:
 
-*   **x86_64** (AMD64)
-*   **x86** (i386)
-*   **RISC-V 64**
-*   **AArch64** (ARM64)
-*   **ARM** (32-bit)
-*   **MIPS**
+- **x86** (i386)
+- **x86-64** (AMD64)
+- **ARM** (32-bit)
+- **AArch64** (ARM64)
+- **RISC-V** (32-bit)
+- **RISC-V** (64-bit)
+- **MIPS** (32-bit Big Endian)
+- **MIPS** (64-bit Big Endian)
+- **MIPS** (32-bit Little Endian)
+- **MIPS** (64-bit Little Endian)
 
 ## Prerequisites
 
 To build and run this project, you need the following tools installed on your system:
 
-*   **C Compiler**: Clang (recommended) or GCC, supporting C11.
-*   **CMake**: Version 3.16 or higher.
-*   **LLVM Development Libraries**: `libllvm` (headers and libraries).
-*   **Python 3**: For the configuration generator script.
-*   **Make** or **Ninja**: Build system generator.
+- **C Compiler**: Clang (recommended) or GCC, supporting C11.
+- **CMake**: Version 3.16 or higher.
+- **LLVM Development Libraries**: `libllvm` (headers and libraries).
+- **Python 3**: For the configuration generator script.
+- **Make** or **Ninja**: Build system generator.
 
 **Optional:**
-*   **Doxygen**: For generating API documentation.
-*   **LaTeX/pdfTeX**: For generating PDF documentation.
-*   **Mypy**: For static type checking of Python scripts.
+
+- **Doxygen**: For generating API documentation.
+- **LaTeX/pdfTeX**: For generating PDF documentation.
+- **Mypy**: For static type checking of Python scripts.
 
 ## Building the Project
 
 We use CMake to manage the build configuration. This project employs "Modern CMake" practices, ensuring out-of-source builds and preventing source tree pollution.
 
 1.  **Create a build directory:**
+
     ```sh
     mkdir build && cd build
     ```
 
 2.  **Configure the project:**
+
     ```sh
     cmake ..
     ```
-    *Note: CMake will prefer Clang if available. To force GCC, use `cmake -DCMAKE_C_COMPILER=gcc ..`*
+
+    _Options:_
+    - `-DENABLE_PARANOID_HARDENING=ON`: Enable strict security flags and sanitizers.
+    - `-DTARGET_ARCH=<arch>`: Force generation for a specific architecture (e.g., `riscv64`, `mips`).
+    - `-DCMAKE_C_COMPILER=gcc`: Force GCC usage.
 
 3.  **Compile:**
     ```sh
@@ -96,6 +107,7 @@ We use CMake to manage the build configuration. This project employs "Modern CMa
 ## Usage
 
 ### Running the Demo
+
 To build the tool, generate an ELF binary for your host architecture, and execute it immediately:
 
 ```sh
@@ -103,27 +115,40 @@ make run_demo
 ```
 
 ### Manual Execution
+
 You can also run the steps manually:
 
 1.  **Run the creator:**
+
     ```sh
     ./elf_creator
     ```
-    *Output:* A file named `elf` in the current directory.
-    *Verbose output will show the detected architecture, generated IR, and machine code hex dump.*
+
+    _Output:_ A file named `elf` in the current directory.
+    _Verbose output will show the detected architecture, generated IR, and machine code hex dump._
 
 2.  **Execute the generated binary:**
     ```sh
     ./elf
     ```
-    *Output:* `Hello!`
+    _Output:_ `Hello!`
 
-### Cross-Compilation (Experimental)
-You can attempt to generate code for a different target by passing the LLVM triple:
+### Cross-Compilation
+
+To generate code for a different architecture, ensure you configured the build with `-DTARGET_ARCH=<arch>` (or ensure the catalog includes it), then pass the LLVM triple:
+
 ```sh
 ./elf_creator --target=riscv64-unknown-linux-gnu
 ```
-*Note: You will need a compatible emulator (like QEMU) to run the resulting binary if it doesn't match your host architecture.*
+
+_Note: The tool automatically handles 32-bit/64-bit headers and endianness swapping. You will need a compatible emulator (like QEMU) to run the resulting binary._
+
+### Inspecting the Generated Binary
+
+The generated ELF file is **minimalist**: it contains **Program Headers** (which the OS loader needs) but omits **Section Headers** (which are optional for execution but used by debugging tools).
+
+- **`readelf -l elf`**: Use this to verify the binary structure. You will see a `LOAD` segment with `R E` (Read/Execute) permissions.
+- **`objdump -d elf`**: This will likely fail or show nothing, as `objdump` relies on section headers to find the `.text` section.
 
 ## Design Decisions
 
@@ -162,19 +187,21 @@ The source code is extensively documented using Doxygen-style comments.
 
 To generate the documentation locally:
 
-*   **HTML**:
-    ```sh
-    make docs
-    ```
-    Open `build/docs/html/index.html` in your browser.
+- **HTML**:
 
-*   **PDF**:
-    ```sh
-    make docs_pdf
-    ```
-    The PDF will be available at `build/docs/latex/refman.pdf`.
+  ```sh
+  make docs
+  ```
+
+  Open `build/docs/html/index.html` in your browser.
+
+- **PDF**:
+  ```sh
+  make docs_pdf
+  ```
+  The PDF will be available at `build/docs/latex/refman.pdf`.
 
 ### Development Tools
 
-*   **Type Checking**: Run `make check_types` to verify Python scripts with `mypy`.
-*   **Editor Integration**: Link `build/compile_commands.json` to your project root for LSP support.
+- **Type Checking**: Run `make check_types` to verify Python scripts with `mypy`.
+- **Editor Integration**: Link `build/compile_commands.json` to your project root for LSP support.

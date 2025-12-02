@@ -9,12 +9,11 @@
 #ifndef ELF_CREATOR_H
 #define ELF_CREATOR_H
 
+#include <elf.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-/** @brief Offset of the .text section in the ELF file. */
-#define TEXT_OFFSET 0x78
 /** @brief Default base virtual address if not specified by architecture config.
  */
 #define DEFAULT_BASE_VADDR 0x400000
@@ -34,8 +33,7 @@
  * cross-architecture support without external toolchains.
  */
 typedef struct {
-    const char* keyword;   /**< Substring to match in LLVM target triple (e.g.,
-                              "x86_64"). */
+    const char* keyword;   /**< Canonical LLVM target name (e.g., "x86-64"). */
     uint16_t e_machine;    /**< ELF machine architecture (e.g., EM_X86_64). */
     uint64_t base_vaddr;   /**< Base virtual address for the executable. */
     const char* write_asm; /**< Inline assembly for the write syscall. */
@@ -44,6 +42,8 @@ typedef struct {
     const char* exit_asm;  /**< Inline assembly for the exit syscall. */
     const char*
         exit_constraints; /**< LLVM constraints string for exit syscall. */
+    uint8_t elf_class;    /**< ELF Class (ELFCLASS32 or ELFCLASS64). */
+    uint8_t endianness; /**< ELF Data Encoding (ELFDATA2LSB or ELFDATA2MSB). */
 } ArchConfig;
 
 /**
@@ -62,12 +62,12 @@ typedef struct {
 void initialize_llvm_targets(void);
 
 /**
- * @brief Select the architecture configuration based on the target triple.
+ * @brief Select the architecture configuration based on the target name.
  *
- * @param triple The LLVM target triple string.
+ * @param target_name The canonical LLVM target name.
  * @return Pointer to the matching ArchConfig, or NULL if not found.
  */
-const ArchConfig* select_arch_config(const char* triple);
+const ArchConfig* select_arch_config(const char* target_name);
 
 /**
  * @brief Generate machine code for the "Hello World" program.

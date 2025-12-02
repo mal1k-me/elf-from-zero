@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import platform
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -70,6 +71,18 @@ def render_entry(entry: Dict[str, Any]) -> str:
     e_machine = entry.get("e_machine", "EM_NONE")
     base_vaddr = entry.get("base_vaddr", "0x400000")
 
+    # Infer ELF class
+    if "64" in keyword:
+        elf_class = "ELFCLASS64"
+    else:
+        elf_class = "ELFCLASS32"
+
+    # Infer Endianness
+    if keyword in ["mips", "mips64"]:
+        endianness = "ELFDATA2MSB"
+    else:
+        endianness = "ELFDATA2LSB"
+
     write = entry.get("write", {})
     exit_block = entry.get("exit", {})
 
@@ -83,11 +96,12 @@ def render_entry(entry: Dict[str, Any]) -> str:
 
     if len(constraints_line) > 80:
         write_constraints_formatted = (
-            f'        .write_constraints =\n'
-            f'            "{write_constraints}",'
+            f"        .write_constraints =\n" f'            "{write_constraints}",'
         )
     else:
-        write_constraints_formatted = f'        .write_constraints = "{write_constraints}",'
+        write_constraints_formatted = (
+            f'        .write_constraints = "{write_constraints}",'
+        )
 
     return f"""\
     {{
@@ -98,6 +112,8 @@ def render_entry(entry: Dict[str, Any]) -> str:
 {write_constraints_formatted}
         .exit_asm = "{exit_asm}",
         .exit_constraints = "{exit_constraints}",
+        .elf_class = {elf_class},
+        .endianness = {endianness},
     }}"""
 
 
@@ -124,23 +140,63 @@ static const ArchConfig ARCHES[] = {{
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Emit include/generated_arch_config.h from a JSON catalog.")
-    parser.add_argument("--catalog", default=DEFAULT_CATALOG, help="Path to the architecture catalog JSON file.")
-    parser.add_argument("--output", default=DEFAULT_OUTPUT, help="Destination header path.")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output.")
+    parser = argparse.ArgumentParser(
+        description="Emit include/generated_arch_config.h from a JSON catalog."
+    )
+    parser.add_argument(
+        "--catalog",
+        default=DEFAULT_CATALOG,
+        help="Path to the architecture catalog JSON file.",
+    )
+    parser.add_argument(
+        "--output", default=DEFAULT_OUTPUT, help="Destination header path."
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose output."
+    )
+    parser.add_argument(
+        "--arch",
+        help="Target architecture to include. Defaults to current host architecture.",
+    )
     args = parser.parse_args()
 
     catalog_path = Path(args.catalog)
     entries = load_catalog(catalog_path)
+
+    # Filter entries
+    if args.arch:
+        entries = [e for e in entries if e.get("keyword") == args.arch.strip()]
+    else:
+        # Default to current host architecture
+        host_arch = platform.machine().lower()
+        # Map host_arch to our keywords if necessary
+        if host_arch == "amd64":
+            host_arch = "x86_64"
+        if host_arch == "x86_64":
+            host_arch = "x86-64"  # Map to canonical LLVM name
+
+        filtered = [e for e in entries if e.get("keyword") == host_arch]
+        if filtered:
+            entries = filtered
+        else:
+            if args.verbose:
+                print(
+                    f"[gen_arch_config] Host arch '{host_arch}' not found in catalog. Generating all."
+                )
+            # Fallback to all if host not found
+            pass
+
     initial_count = len(entries)
     entries = [entry for entry in entries if entry_has_real_asm(entry)]
 
     if args.verbose:
-        print(f"[gen_arch_config] Loaded {initial_count} entries from {catalog_path}")
+        print(f"[gen_arch_config] Emitting {len(entries)} entries")
         for entry in entries:
             print(f"  - Processing arch: {entry.get('keyword', 'unknown')}")
     else:
-        print(f"[gen_arch_config] catalog entries={initial_count}, emitting={len(entries)}")
+        print(
+            f"[gen_arch_config] catalog entries={initial_count}, emitting={len(entries)}"
+        )
 
     header_text = render_header(entries, catalog_path)
 

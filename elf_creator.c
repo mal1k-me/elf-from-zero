@@ -90,7 +90,25 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    const ArchConfig* config = select_arch_config(triple_copy);
+    LLVMTargetRef target = NULL;
+    char* error = NULL;
+    if (LLVMGetTargetFromTriple(triple_copy, &target, &error)) {
+        (void)fprintf(stderr,
+                      "Error getting target from triple '%s': %s\n",
+                      triple_copy,
+                      error);
+        LLVMDisposeMessage(error);
+        free(triple_copy);
+        if (default_triple) {
+            LLVMDisposeMessage(default_triple);
+        }
+        return 1;
+    }
+
+    const char* target_name = LLVMGetTargetName(target);
+    (void)printf("Canonical Target Name: %s\n", target_name);
+
+    const ArchConfig* config = select_arch_config(target_name);
     if (default_triple) {
         LLVMDisposeMessage(default_triple);
     }

@@ -3,3 +3,4 @@ build/
 
 # Caches
 .cache/
+.ruff_cache/
